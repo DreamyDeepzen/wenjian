@@ -24,17 +24,25 @@ export default function Fill() {
   const { id = '' } = useParams()
   // survey from the owner's local storage, or embedded in the share link
   // (published static site — respondents have no local copy)
-  const { survey, formspreeId } = useMemo(() => {
+  const { survey, pushToken, formspreeId } = useMemo(() => {
     const local = getSurvey(id)
-    if (local) return { survey: local, formspreeId: getSettings().formspreeId }
+    if (local) {
+      const st = getSettings()
+      return { survey: local, pushToken: st.pushToken, formspreeId: st.formspreeId }
+    }
     // query lives inside the URL hash (HashRouter): #/fill/<id>?d=...
     const hashQuery = window.location.hash.split('?')[1] ?? ''
     const d = new URLSearchParams(hashQuery).get('d')
     if (d) {
       const payload = decodePayload(d)
-      if (payload) return { survey: payload.s, formspreeId: payload.f }
+      if (payload)
+        return {
+          survey: payload.s,
+          pushToken: payload.p ?? '',
+          formspreeId: payload.f ?? '',
+        }
     }
-    return { survey: undefined, formspreeId: '' }
+    return { survey: undefined, pushToken: '', formspreeId: '' }
   }, [id])
 
   const [values, setValues] = useState<Record<string, string | string[] | number>>({})
@@ -59,7 +67,9 @@ export default function Fill() {
         <CheckCircle2 className="h-14 w-14 text-green-500" />
         <h2 className="mt-4 text-xl font-semibold">提交成功，感谢参与！</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {formspreeId ? '你的回答已记录，并已发送给问卷发布者。' : '你的回答已记录。'}
+          {pushToken || formspreeId
+            ? '你的回答已记录，并已发送给问卷发布者。'
+            : '你的回答已记录。'}
         </p>
       </Centered>
     )
@@ -99,7 +109,37 @@ export default function Fill() {
     // 1) save locally so the owner can browse responses in the app
     addResponse({ id: uid(), surveyId: survey.id, submittedAt: Date.now(), answers })
 
-    // 2) forward to the owner's email via Formspree (id embedded in the share link or local settings)
+    // 2) push to the owner's WeChat via PushPlus (token embedded in the share link or local settings)
+    if (pushToken) {
+      const lines: string[] = []
+      survey.questions.forEach((q, i) => {
+        const a = answers.find((x) => x.questionId === q.id)
+        lines.push(`${i + 1}. ${q.title}`)
+        lines.push(`   ${formatValue(q, a?.value ?? null)}`)
+        lines.push('')
+      })
+      const content = [
+        `问卷：${survey.title}`,
+        `提交时间：${new Date().toLocaleString('zh-CN')}`,
+        '',
+        ...lines,
+      ].join('\n')
+      try {
+        const res = await fetch(
+          `https://www.pushplus.plus/send?token=${encodeURIComponent(pushToken)}&title=${encodeURIComponent(
+            `【问卷反馈】${survey.title}`,
+          )}&content=${encodeURIComponent(content)}`,
+        )
+        const data = await res.json().catch(() => null)
+        if (!res.ok || (data && data.code !== 200)) {
+          toast.warning('微信推送失败，结果仍已保存在网站中')
+        }
+      } catch {
+        toast.warning('微信推送失败，结果仍已保存在网站中')
+      }
+    }
+
+    // 3) forward to the owner's email via Formspree (optional, id embedded in the share link or local settings)
     if (formspreeId) {
       const payload: Record<string, string> = { _subject: `【问卷反馈】${survey.title}` }
       survey.questions.forEach((q) => {

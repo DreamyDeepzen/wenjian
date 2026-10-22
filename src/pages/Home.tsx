@@ -57,11 +57,11 @@ export default function Home() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
-        {!settings.formspreeId && (
+        {!settings.pushToken && !settings.formspreeId && (
           <Card className="mb-6 border-amber-300 bg-amber-50 dark:bg-amber-950/30">
             <CardContent className="flex items-center justify-between py-4">
               <p className="text-sm text-amber-800 dark:text-amber-200">
-                尚未配置结果接收方式：填表人提交后，结果暂时只保存在本机。配置 Formspree 后可将每份结果自动发送到你的邮箱。
+                尚未配置结果接收方式：填表人提交后，结果暂时只保存在本机。配置微信推送后，每份结果会秒推送到你的微信。
               </p>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/settings">去配置</Link>

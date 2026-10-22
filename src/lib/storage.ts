@@ -5,7 +5,9 @@ const RESPONSES_KEY = 'wj.responses'
 const SETTINGS_KEY = 'wj.settings'
 
 export interface Settings {
-  /** Formspree endpoint id, e.g. xgejdrpv — submissions are emailed to your Formspree account */
+  /** PushPlus token (32-hex) — submissions are pushed to the owner's WeChat */
+  pushToken: string
+  /** Formspree endpoint id, e.g. xgejdrpv — optional, submissions are also emailed */
   formspreeId: string
   /** owner contact shown on the thanks page */
   ownerEmail: string
@@ -14,11 +16,11 @@ export interface Settings {
 export function getSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY)
-    if (raw) return JSON.parse(raw) as Settings
+    if (raw) return { pushToken: '', formspreeId: '', ownerEmail: '', ...(JSON.parse(raw) as Partial<Settings>) }
   } catch {
     /* ignore */
   }
-  return { formspreeId: '', ownerEmail: '' }
+  return { pushToken: '', formspreeId: '', ownerEmail: '' }
 }
 
 export function saveSettings(s: Settings) {

@@ -8,8 +8,10 @@ import type { Survey } from '@/types/survey'
  */
 export interface SharedPayload {
   s: Survey
-  /** Formspree form id, e.g. xgejdrpv — submissions are emailed to the owner */
-  f: string
+  /** PushPlus token — submissions are pushed to the owner's WeChat */
+  p?: string
+  /** Formspree form id (optional) — submissions are also emailed */
+  f?: string
 }
 
 export function encodePayload(p: SharedPayload): string {

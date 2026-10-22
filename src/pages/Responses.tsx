@@ -29,12 +29,13 @@ export default function Responses() {
     )
   }
 
-  // The share link embeds the survey definition (and Formspree id) so that
+  // The share link embeds the survey definition and receiver tokens so that
   // anyone — on any device, without the owner's local data — can open and fill it.
   // HashRouter share link: https://host/#/fill/<id>?d=<base64url(JSON)>
   const shareUrl = `${window.location.origin}/#/fill/${survey.id}?d=${encodePayload({
     s: survey,
-    f: getSettings().formspreeId,
+    p: getSettings().pushToken,
+    f: getSettings().formspreeId || undefined,
   })}`
 
   const copyLink = async () => {
@@ -91,7 +92,7 @@ export default function Responses() {
             <CardHeader>
               <CardTitle className="text-base">还没有收到结果</CardTitle>
               <CardDescription>
-                把公开填写链接发给其他人，他们提交后结果会发送到你的邮箱；本机测试提交会显示在下方表格
+                把公开填写链接发给其他人，他们提交后结果会推送到你的微信（或邮箱）；你自己在本机测试提交会显示在下方表格
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -103,8 +104,8 @@ export default function Responses() {
             <CardHeader>
               <CardTitle className="text-base">共 {responses.length} 份结果</CardTitle>
               <CardDescription>
-                下表仅显示本机浏览器中的提交（例如你自己测试填写的）；其他人通过公开链接提交的结果会发送到你的邮箱，也可登录
-                formspree.io 在对应表单的 Submissions 中查看全部
+                下表仅显示本机浏览器中的提交（例如你自己测试填写的）；其他人通过公开链接提交的结果会推送到你的微信（配置了
+                PushPlus 时）或发送到你的邮箱（配置了 Formspree 时），以通知为准
               </CardDescription>
             </CardHeader>
             <CardContent>
